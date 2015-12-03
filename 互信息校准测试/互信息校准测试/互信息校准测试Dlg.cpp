@@ -109,10 +109,12 @@ BOOL C互信息校准测试Dlg::OnInitDialog()
 
 	// TODO:  在此添加额外的初始化代码
 
-	BOOL m_PicturePointdownflag = TRUE; //全景图特征选取标记位初始化为False
+	BOOL m_PicturePointdownflag = FALSE; //全景图特征选取标记位初始化为False
 	BOOL m_VideoPointdownflag = FALSE;  //视频帧图像特征选取标记位初始化为False
 
-
+	GetDlgItem(IDC_PICTURE_POINT)->EnableWindow(FALSE); //初始状态,获取特征点按钮是失能的
+	GetDlgItem(IDC_VIDEO_POINT)->EnableWindow(FALSE); //初始状态,获取特征点按钮是失能的
+	GetDlgItem(IDC_ADUJST)->EnableWindow(FALSE); //初始状态,计算互信息按钮是失能的
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -173,39 +175,48 @@ void C互信息校准测试Dlg::OnLButtonUp(UINT nFlags, CPoint point)
 	// TODO:  在此添加消息处理程序代码和/或调用默认值
 	if ((m_PicturePointdownflag == TRUE) && (m_VideoPointdownflag == FALSE))
 	{
-		//(this->GetDlgItem(IDC_PICTURE))->GetWindowRect(&rect_ctr);
+	    (this->GetDlgItem(IDC_PICTURE))->GetWindowRect(&m_TheImageRect);
 		m_TheImage.GetWindowRect(m_TheImageRect);//获取显示全景图像所在矩形窗的坐标
 		ScreenToClient(m_TheImageRect);			//转换为对话框上的坐标
 		point.x -= m_TheImageRect.left;//point获取的是鼠标相对对话框客户区左上角的坐标，减去rect_ctr.left和
 		point.y -= m_TheImageRect.top;//rect_ctr.top后，即为鼠标相对Picture控件左上角的坐标
+		
 
 		if (m_points2.size() <= 3)	
 		{ 
-			char point_x[4];
-			char point_y[4];
-			char point_num[4];
-			_ltoa(point.x, point_x, 10);
-			_ltoa(point.y, point_y, 10);
-			_itoa(m_points1.size() + 1, point_num, 10);
-			char message[20] = "Point ";
-			strcat(message, point_num);
-			strcat(message, ": ");
-			strcat(message, point_x);
-			strcat(message, ",");
-			strcat(message, point_y);
+			if (point.x < 0 || point.x > m_TheImageRect.Width() || point.y < 0 || point.y > m_TheImageRect.Height())
+			{
+				MessageBox("选取的点不在目标图像范围内！");
+			}
+			else
+			{
+				char point_x[5];
+				char point_y[5];
+				char point_num[4];
+				_ltoa(point.x, point_x, 10);
+				_ltoa(point.y, point_y, 10);
+				_itoa(m_points2.size() + 1, point_num, 10);
+				char message[20] = "Point ";
+				strcat(message, point_num);
+				strcat(message, ": ");
+				strcat(message, point_x);
+				strcat(message, ",");
+				strcat(message, point_y);
 
-			MessageBox(message);
-			m_points2.push_back(point);
+				MessageBox(message);
+				m_points2.push_back(point);
+			}
 		}
-		else
+		
+		if (m_points2.size() >= 4)
 		{
-			MessageBox("数目已经超过4个了");
+			MessageBox("左图中选取的特征点数目已经达到4个");
 			return;
 		}
 	}
 	else if ((m_PicturePointdownflag == TRUE) && (m_VideoPointdownflag == TRUE))
 	{
-		//(this->GetDlgItem(IDC_VIDEO))->GetWindowRect(&rect_ctr);
+		(this->GetDlgItem(IDC_VIDEO))->GetWindowRect(&m_TheImageRect);
 		m_CamImage.GetWindowRect(m_CamImageRect);//获取显示视频帧图像所在矩形窗
 		ScreenToClient(m_CamImageRect);			//转换为对话框上的坐标
 		point.x -= m_CamImageRect.left;//point获取的是鼠标相对对话框客户区左上角的坐标，减去rect_ctr.left和
@@ -213,25 +224,35 @@ void C互信息校准测试Dlg::OnLButtonUp(UINT nFlags, CPoint point)
 
 		if (m_points1.size() <= 3)
 		{
-			char point_x[4];
-			char point_y[4];
-			char point_num[4];
-			_ltoa(point.x, point_x, 10);
-			_ltoa(point.y, point_y, 10);
-			_itoa(m_points1.size() + 1, point_num, 10);
-			char message[20] = "Point ";
-			strcat(message, point_num);
-			strcat(message, ": ");
-			strcat(message, point_x);
-			strcat(message, ",");
-			strcat(message, point_y);
+			if (point.x < 0 || point.x > m_TheImageRect.Width() || point.y < 0 || point.y > m_TheImageRect.Height())
+			{
+				MessageBox("选取的点不在目标图像范围内！");
+			}
+			else
+			{
+				char point_x[5];
+				char point_y[5];
+				char point_num[5];
+				_ltoa(point.x, point_x, 10);
+				_ltoa(point.y, point_y, 10);
+				_itoa(m_points1.size() + 1, point_num, 10);
+				char message[20] = "Point ";
+				strcat(message, point_num);
+				strcat(message, ": ");
+				strcat(message, point_x);
+				strcat(message, ",");
+				strcat(message, point_y);
 
-			MessageBox(message);
-			m_points1.push_back(point);
+				MessageBox(message);
+				m_points1.push_back(point);
+			}
 		}
-		else
+
+		if (m_points1.size() >= 4)
 		{
-			MessageBox("数目已经超过4个了");
+			MessageBox("右图中选取的特征点数目已经达到4个");
+			GetDlgItem(IDC_ADUJST)->EnableWindow(TRUE);
+			MessageBox("可进行互信息匹配");
 			return;
 		}
 	}
@@ -269,6 +290,7 @@ void C互信息校准测试Dlg::OnBnClickedOpenPicture()
 	//DrawPicToHDC(TheImage, IDC_PICTURE);            // 调用显示图片函数    
 	UpdateWindow();
 
+	GetDlgItem(IDC_PICTURE_POINT)->EnableWindow(TRUE); // 使获取特征点按钮生效
 }
 
 
@@ -292,7 +314,7 @@ void C互信息校准测试Dlg::OnBnClickedOpenVideo()
 	//DrawPicToHDC(TheImage, IDC_PICTURE);            // 调用显示图片函数    
 	UpdateWindow();
 
-
+	GetDlgItem(IDC_VIDEO_POINT)->EnableWindow(TRUE); // 使获取特征点按钮生效
 }
 
 
@@ -320,7 +342,7 @@ void C互信息校准测试Dlg::OnBnClickedAdujst()
 	vector<CPoint> Points1 = m_points1;// 视频帧图像匹配点集（要求四个）
 	vector<CPoint> Points2 = m_points2;// 全景图像匹配点集，初始匹配点集（要求四个）
 
-	Newpoints = Refresh_MacthPoints(Points1, Points2);//查找全景图上四个精确匹配点集
+	//Newpoints = Refresh_MacthPoints(Points1, Points2);//查找全景图上四个精确匹配点集
 
 	m_newpoints = Newpoints;
 }
