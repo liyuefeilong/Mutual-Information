@@ -67,6 +67,8 @@ public:
 	BOOL m_PicturePointdownflag; //全景图特征选取标记位
 	BOOL m_VideoPointdownflag;  //视频帧图像特征选取标记位
 
+	double proportionPicture[2];
+	double proportionVideo[2];
 
 public:
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
@@ -79,11 +81,11 @@ public:
 
 public:
 
-	void ShowMatImgToWnd(CWnd* pWnd, cv::Mat img);
+	void ShowMatImgToWnd(CWnd* pWnd, cv::Mat img, double *proportion);
 
 	double Entropy(Mat img);//单幅图像信息熵计算	
 	double ComEntropy(Mat img1, Mat img2, double img1_entropy, double img2_entropy);// 两幅图像联合信息熵计算	
-	vector<CPoint> Refresh_MacthPoints(vector<CPoint> points1, vector<CPoint> points2);//查找全景图上四个精确匹配点集
+	void Refresh_MacthPoints(vector<CPoint> points1, vector<CPoint> points2);//查找全景图上四个精确匹配点集
 
 
 };

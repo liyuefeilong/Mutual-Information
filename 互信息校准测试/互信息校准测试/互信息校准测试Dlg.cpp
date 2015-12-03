@@ -180,7 +180,6 @@ void C互信息校准测试Dlg::OnLButtonUp(UINT nFlags, CPoint point)
 		ScreenToClient(m_TheImageRect);			//转换为对话框上的坐标
 		point.x -= m_TheImageRect.left;//point获取的是鼠标相对对话框客户区左上角的坐标，减去rect_ctr.left和
 		point.y -= m_TheImageRect.top;//rect_ctr.top后，即为鼠标相对Picture控件左上角的坐标
-		
 
 		if (m_points2.size() <= 3)	
 		{ 
@@ -216,7 +215,7 @@ void C互信息校准测试Dlg::OnLButtonUp(UINT nFlags, CPoint point)
 	}
 	else if ((m_PicturePointdownflag == TRUE) && (m_VideoPointdownflag == TRUE))
 	{
-		(this->GetDlgItem(IDC_VIDEO))->GetWindowRect(&m_TheImageRect);
+		(this->GetDlgItem(IDC_VIDEO))->GetWindowRect(&m_CamImageRect);
 		m_CamImage.GetWindowRect(m_CamImageRect);//获取显示视频帧图像所在矩形窗
 		ScreenToClient(m_CamImageRect);			//转换为对话框上的坐标
 		point.x -= m_CamImageRect.left;//point获取的是鼠标相对对话框客户区左上角的坐标，减去rect_ctr.left和
@@ -286,7 +285,7 @@ void C互信息校准测试Dlg::OnBnClickedOpenPicture()
 
 	TheImage = cvLoadImage(mPath, 1);    // 读取图片、缓存到一个局部变量 ipl 中
 	//Mat TheImage = imread(mPath,1);
-	ShowMatImgToWnd(GetDlgItem(IDC_PICTURE), TheImage);
+	ShowMatImgToWnd(GetDlgItem(IDC_PICTURE), TheImage, proportionPicture);
 	//DrawPicToHDC(TheImage, IDC_PICTURE);            // 调用显示图片函数    
 	UpdateWindow();
 
@@ -310,7 +309,7 @@ void C互信息校准测试Dlg::OnBnClickedOpenVideo()
 
 	CamImage = cvLoadImage(mPath, 1);    // 读取图片、缓存到一个局部变量 ipl 中
 	//Mat TheImage = imread(mPath,1);
-	ShowMatImgToWnd(GetDlgItem(IDC_VIDEO), CamImage);
+	ShowMatImgToWnd(GetDlgItem(IDC_VIDEO), CamImage, proportionVideo);
 	//DrawPicToHDC(TheImage, IDC_PICTURE);            // 调用显示图片函数    
 	UpdateWindow();
 
@@ -343,21 +342,33 @@ void C互信息校准测试Dlg::OnBnClickedAdujst()
 	vector<CPoint> Points2 = m_points2;// 全景图像匹配点集，初始匹配点集（要求四个）
 
 	//Newpoints = Refresh_MacthPoints(Points1, Points2);//查找全景图上四个精确匹配点集
-
-	m_newpoints = Newpoints;
+	Refresh_MacthPoints(Points1, Points2);//查找全景图上四个精确匹配点集
+	//m_newpoints = Newpoints;
 }
 
 
 // 将图像显示到对应的图像框
-void C互信息校准测试Dlg::ShowMatImgToWnd(CWnd* pWnd, cv::Mat img)
+void C互信息校准测试Dlg::ShowMatImgToWnd(CWnd* pWnd, cv::Mat img, double *proportion)
 {
 	if (img.empty())
 		return;
 	CDC *pDC = pWnd->GetDC();
 	HDC hDC = pDC->GetSafeHdc();
 	CRect rect;
-	pWnd->GetClientRect(&rect);
+	pWnd->GetClientRect(&rect);   
 	IplImage Iimg = img;
+		
+	// m_CamImageRect
+
+	int rw = rect.right - rect.left; // 求出图片控件的宽和高   
+	int rh = rect.bottom - rect.top;   
+	int iw = TheImage.cols; // 读取原始图片的宽和高   
+	int ih = TheImage.rows;
+
+	// 计算缩放比例
+	proportion[0] = rw * 1.0 / iw;
+	proportion[1] = rh * 1.0 / ih;
+
 	CvvImage cimg;
 	cimg.CopyOf(&Iimg); // 复制图片
 	cimg.DrawToHDC(hDC, &rect); // 将图片绘制到显示控件的指定区域内
@@ -401,8 +412,6 @@ double C互信息校准测试Dlg::Entropy(Mat img)
 	return result;
 
 }
-
-
 
 
 // 两幅图像联合信息熵计算
@@ -457,14 +466,11 @@ double C互信息校准测试Dlg::ComEntropy(Mat img1, Mat img2, double img1_entropy, d
 }
 
 
-
-
-
-//查找全景图上四个精确匹配点集
-vector<CPoint> C互信息校准测试Dlg::Refresh_MacthPoints(vector<CPoint> points1, vector<CPoint> points2)
+//查找全景图上四个精确匹配点集 return vector<CPoint>
+void C互信息校准测试Dlg::Refresh_MacthPoints(vector<CPoint> points1, vector<CPoint> points2)
 {
-	int IMGSIDE = 15; //截取正方形子图的边长一半
-	int IMAGESIDE = 15; //局部搜索区域的半径
+	int IMGSIDE = 8; //截取正方形子图的边长一半
+	int IMAGESIDE = 8; //局部搜索区域的半径
 
 	points1 = m_points1; // 视频帧图像匹配点集
 	points2 = m_points2; // 全景图像匹配点集，初始匹配点，需要利用互信息子函数更新
@@ -472,15 +478,54 @@ vector<CPoint> C互信息校准测试Dlg::Refresh_MacthPoints(vector<CPoint> points1, v
 	//// Mat TheImage; //全景图
 	//// Mat CamImage; //视频帧图像
 
+	cv::Size mat_size;
+	mat_size.height = 17;
+	mat_size.width = 17;
+
 	Mat dst1[4];   // 视频帧图像上截取的四个点的子图
 	Mat dst2[4];   // 全景图像上截取的四个点的子图
 
+	// 取子图
+	for (int i = 0; i < 4; ++i)
+	{
+		// 视频帧图像取子图
+		int Point1_x = int(points1[i].x / proportionVideo[0] - 50);
+		int Point1_y = int(points1[i].y / proportionVideo[1] - 50);
+		Rect rect1(Point1_x, Point1_y, 100, 100);
+		CamImage(rect1).copyTo(dst1[i]);
 
+		// 全景图像取子图
+		int Point2_x = int(points2[i].x / proportionPicture[0] - 50);
+		int Point2_y = int(points2[i].y / proportionPicture[1] - 50);
+		Rect rect2(Point2_x, Point2_y, 100, 100);
+		TheImage(rect2).copyTo(dst2[i]);
+		
+	}
+	/*
+		imshow("a1", dst1[0]);
+		imshow("b1", dst1[1]);
+		imshow("c1", dst1[2]);
+		imshow("d1", dst1[3]);
+	
+		imshow("a2", dst2[0]);
+		imshow("b2", dst2[1]);
+		imshow("c2", dst2[2]);
+		imshow("d2", dst2[3]);
+		*/
 
+			//计算对应图像子块的互信息熵
+	double OneImaEntropy1[4]; //视频帧图像信息熵
+	double OneImaEntropy2[4]; //全景图信息熵
+	double TwoImaEntropy[4]; //初始互信息熵
 
-	cv::Point CLSPoint[4], CRXPoint[4];
-	//截取视频帧图像子图
-	for (int i = 0; i<4; i++)
+	for (int i = 0; i < 4; ++i)
+	{
+		OneImaEntropy1[i] = Entropy(dst1[i]);
+		OneImaEntropy2[i] = Entropy(dst2[i]);
+		TwoImaEntropy[i] = ComEntropy(dst1[i], dst2[i], OneImaEntropy1[i], OneImaEntropy2[i]);
+	}
+	/*
+	for (int i = 0; i < 4; i++)
 	{
 		CLSPoint[i].x = points1.at(i).x - IMGSIDE;
 		CLSPoint[i].y = points1.at(i).y - IMGSIDE;
@@ -565,8 +610,8 @@ vector<CPoint> C互信息校准测试Dlg::Refresh_MacthPoints(vector<CPoint> points1, v
 			}
 		}
 	}
-
-	return  NewPoints;
-
+	
+	return NewPoints;
+	*/
 }
 
