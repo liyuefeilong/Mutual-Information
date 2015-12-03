@@ -169,21 +169,39 @@ HCURSOR C互信息校准测试Dlg::OnQueryDragIcon()
 
 void C互信息校准测试Dlg::OnLButtonUp(UINT nFlags, CPoint point)
 {
+	
 	// TODO:  在此添加消息处理程序代码和/或调用默认值
 	if ((m_PicturePointdownflag == TRUE) && (m_VideoPointdownflag == FALSE))
 	{
-		// (this->GetDlgItem(IDC_PICTURE))->GetWindowRect(&rect_ctr);
+		//(this->GetDlgItem(IDC_PICTURE))->GetWindowRect(&rect_ctr);
 		m_TheImage.GetWindowRect(m_TheImageRect);//获取显示全景图像所在矩形窗的坐标
 		ScreenToClient(m_TheImageRect);			//转换为对话框上的坐标
 		point.x -= m_TheImageRect.left;//point获取的是鼠标相对对话框客户区左上角的坐标，减去rect_ctr.left和
 		point.y -= m_TheImageRect.top;//rect_ctr.top后，即为鼠标相对Picture控件左上角的坐标
 
-		if (m_points2.size() <= 3)
-			// MessageBox("数目已经有5个了");
-		{
+		if (m_points2.size() <= 3)	
+		{ 
+			char point_x[4];
+			char point_y[4];
+			char point_num[4];
+			_ltoa(point.x, point_x, 10);
+			_ltoa(point.y, point_y, 10);
+			_itoa(m_points1.size() + 1, point_num, 10);
+			char message[20] = "Point ";
+			strcat(message, point_num);
+			strcat(message, ": ");
+			strcat(message, point_x);
+			strcat(message, ",");
+			strcat(message, point_y);
+
+			MessageBox(message);
 			m_points2.push_back(point);
 		}
-		else return;
+		else
+		{
+			MessageBox("数目已经超过4个了");
+			return;
+		}
 	}
 	else if ((m_PicturePointdownflag == TRUE) && (m_VideoPointdownflag == TRUE))
 	{
@@ -194,11 +212,28 @@ void C互信息校准测试Dlg::OnLButtonUp(UINT nFlags, CPoint point)
 		point.y -= m_CamImageRect.top;//rect_ctr.top后，即为鼠标相对Picture控件左上角的坐标
 
 		if (m_points1.size() <= 3)
-			// MessageBox("数目已经有5个了");
 		{
+			char point_x[4];
+			char point_y[4];
+			char point_num[4];
+			_ltoa(point.x, point_x, 10);
+			_ltoa(point.y, point_y, 10);
+			_itoa(m_points1.size() + 1, point_num, 10);
+			char message[20] = "Point ";
+			strcat(message, point_num);
+			strcat(message, ": ");
+			strcat(message, point_x);
+			strcat(message, ",");
+			strcat(message, point_y);
+
+			MessageBox(message);
 			m_points1.push_back(point);
 		}
-		else return;
+		else
+		{
+			MessageBox("数目已经超过4个了");
+			return;
+		}
 	}
 
 	CDialogEx::OnLButtonUp(nFlags, point);
@@ -265,6 +300,7 @@ void C互信息校准测试Dlg::OnBnClickedPicturePoint()
 {
 	// TODO:  在此添加控件通知处理程序代码
 	m_PicturePointdownflag = TRUE;
+	m_VideoPointdownflag = FALSE;
 }
 
 
@@ -475,15 +511,13 @@ vector<CPoint> C互信息校准测试Dlg::Refresh_MacthPoints(vector<CPoint> points1, v
 		TwoImaEntropy[i] = ComEntropy(dst1[i], dst2[i], OneImaEntropy1[i], OneImaEntropy2[i]);
 	}
 
-
-
 	vector<CPoint> NewPoints; // 更新的四个匹配点集
 
-	 Rect rect[4][700][400];
-	 Mat dst[4][700][400];
+	 Rect rect[4][30][30];
+	 Mat dst[4][30][30];
 
-	double OneImaEntropy[4][700][400];
-	double NewTwoEntropy[4][700][400];
+	double OneImaEntropy[4][30][30];
+	double NewTwoEntropy[4][30][30];
 
 	//全景图像匹配点集的局部区域内搜索精确匹配点集
 	for (int i = 0; i < 4; i++)
