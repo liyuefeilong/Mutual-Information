@@ -6,7 +6,7 @@
 #include "cv.h"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-#include <opencv2/core/core.hpp>
+#include "opencv2/core/core.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
 #include "highgui.h"
 #include "CvvImage.h"
@@ -58,8 +58,6 @@ private:
 	CRect m_TheImageRect;//显示全景窗口的矩形窗
 	CRect m_CamImageRect;//显示视频窗口的矩形窗
 
-	
-
 	CvCapture *capture;
 
 
@@ -86,6 +84,6 @@ public:
 	double Entropy(Mat img);//单幅图像信息熵计算	
 	double ComEntropy(Mat img1, Mat img2, double img1_entropy, double img2_entropy);// 两幅图像联合信息熵计算	
 	void Refresh_MacthPoints(vector<CPoint> points1, vector<CPoint> points2);//查找全景图上四个精确匹配点集
-
+	void ShowPointToWnd(CWnd* pWnd, cv::Mat img);
 
 };

@@ -346,6 +346,23 @@ void C互信息校准测试Dlg::OnBnClickedAdujst()
 	//m_newpoints = Newpoints;
 }
 
+// 将图像显示到对应的图像框
+void C互信息校准测试Dlg::ShowPointToWnd(CWnd* pWnd, cv::Mat img)
+{
+	if (img.empty())
+		return;
+	CDC *pDC = pWnd->GetDC();
+	HDC hDC = pDC->GetSafeHdc();
+	CRect rect;
+	pWnd->GetClientRect(&rect);   
+	IplImage Iimg = img;
+
+	CvvImage cimg;
+	cimg.CopyOf(&Iimg); // 复制图片
+	cimg.DrawToHDC(hDC, &rect); // 将图片绘制到显示控件的指定区域内
+	ReleaseDC(pDC);
+}
+
 
 // 将图像显示到对应的图像框
 void C互信息校准测试Dlg::ShowMatImgToWnd(CWnd* pWnd, cv::Mat img, double *proportion)
@@ -379,34 +396,33 @@ void C互信息校准测试Dlg::ShowMatImgToWnd(CWnd* pWnd, cv::Mat img, double *propor
 //单幅图像信息熵计算
 double C互信息校准测试Dlg::Entropy(Mat img)
 {
-	double temp[256] = {0.0};
-
+	double temp[256] = {0.0}; // 初始化
 
 	// 计算每个像素的累积值
-	for (int m = 0; m<img.rows; m++)
+	for (int m = 0; m < img.rows; ++m)
 	{// 有效访问行列的方式
-		const uchar* t = img.ptr<uchar>(m);
-		for (int n = 0; n<img.cols; n++)
+		const uchar* t = img.ptr<uchar>(m); // 指向图像每一行的首地址
+		for (int n = 0; n < img.cols; n++)
 		{
-			int i = t[n];
-			temp[i] = temp[i] + 1;
+			int i = t[n];		   // 获得当前下标的像素值i
+			temp[i] = temp[i] + 1; // 图像中像素值i出现的次数
 		}
 	}
 
-	// 计算每个像素的概率
-	for (int i = 0; i<256; i++)
+	// 计算每个像素出现的概率
+	for (int i = 0; i < 256; ++i)
 	{
-		temp[i] = temp[i] / (img.rows*img.cols);
+		temp[i] /= (img.rows * img.cols); // 换算成概率
 	}
 
 	double result = 0;
 	// 计算图像信息熵
-	for (int i = 0; i<256; i++)
+	for (int i = 0; i < 256; ++i)
 	{
 		if (temp[i] == 0.0)
 			result = result;
 		else
-			result = result - temp[i] * (log(temp[i]) / log(2.0));
+			result -= temp[i] * (log(temp[i]) / log(2.0));
 	}
 
 	return result;
@@ -421,11 +437,11 @@ double C互信息校准测试Dlg::ComEntropy(Mat img1, Mat img2, double img1_entropy, d
 
 
 	// 计算联合图像像素的累积值
-	for (int m1 = 0, m2 = 0; m1 < img1.rows, m2 < img2.rows; m1++, m2++)
+	for (int m1 = 0, m2 = 0; m1 < img1.rows, m2 < img2.rows; ++m1, ++m2)
 	{    // 有效访问行列的方式
 		const uchar* t1 = img1.ptr<uchar>(m1);
 		const uchar* t2 = img2.ptr<uchar>(m2);
-		for (int n1 = 0, n2 = 0; n1 < img1.cols, n2 < img2.cols; n1++, n2++)
+		for (int n1 = 0, n2 = 0; n1 < img1.cols, n2 < img2.cols; ++n1, ++n2)
 		{
 			int i = t1[n1], j = t2[n2];
 			temp[i][j] = temp[i][j] + 1;
@@ -436,9 +452,8 @@ double C互信息校准测试Dlg::ComEntropy(Mat img1, Mat img2, double img1_entropy, d
 	for (int i = 0; i < 256; i++)
 	{
 		for (int j = 0; j < 256; j++)
-
 		{
-			temp[i][j] = temp[i][j] / (img1.rows*img1.cols);
+			temp[i][j] /= (img1.rows * img1.cols);
 		}
 	}
 
@@ -457,8 +472,8 @@ double C互信息校准测试Dlg::ComEntropy(Mat img1, Mat img2, double img1_entropy, d
 	}
 
 	//得到两幅图像的互信息熵
-	img1_entropy = Entropy(img1);
-	img2_entropy = Entropy(img2);
+	//img1_entropy = Entropy(img1);
+	//img2_entropy = Entropy(img2);
 	result = img1_entropy + img2_entropy - result;
 
 	return result;
@@ -469,38 +484,41 @@ double C互信息校准测试Dlg::ComEntropy(Mat img1, Mat img2, double img1_entropy, d
 //查找全景图上四个精确匹配点集 return vector<CPoint>
 void C互信息校准测试Dlg::Refresh_MacthPoints(vector<CPoint> points1, vector<CPoint> points2)
 {
-	int IMGSIDE = 8; //截取正方形子图的边长一半
-	int IMAGESIDE = 8; //局部搜索区域的半径
-
 	points1 = m_points1; // 视频帧图像匹配点集
 	points2 = m_points2; // 全景图像匹配点集，初始匹配点，需要利用互信息子函数更新
 
 	//// Mat TheImage; //全景图
 	//// Mat CamImage; //视频帧图像
-
-	cv::Size mat_size;
-	mat_size.height = 17;
-	mat_size.width = 17;
+	imshow("转换后的全景图", TheImage);
+	cv::Size mat_size;  // 子图的尺寸
+	mat_size.height = 30;
+	mat_size.width = 30;
 
 	Mat dst1[4];   // 视频帧图像上截取的四个点的子图
 	Mat dst2[4];   // 全景图像上截取的四个点的子图
+
+	// 在软件图片显示空间中显示的图片是经过缩放的
+	// 因此选取的坐标也是缩放后的坐标
+	// 需要将坐标转换为实际原图的坐标，存放到以下变量中
+	int Point1_x[4],Point1_y[4], Point2_x[4], Point2_y[4];
 
 	// 取子图
 	for (int i = 0; i < 4; ++i)
 	{
 		// 视频帧图像取子图
-		int Point1_x = int(points1[i].x / proportionVideo[0] - 50);
-		int Point1_y = int(points1[i].y / proportionVideo[1] - 50);
-		Rect rect1(Point1_x, Point1_y, 100, 100);
+		Point1_x[i] = int(points1[i].x / proportionVideo[0] - mat_size.width / 2);
+		Point1_y[i] = int(points1[i].y / proportionVideo[1] - mat_size.height / 2);
+		Rect rect1(Point1_x[i], Point1_y[i], mat_size.width, mat_size.height);
 		CamImage(rect1).copyTo(dst1[i]);
 
 		// 全景图像取子图
-		int Point2_x = int(points2[i].x / proportionPicture[0] - 50);
-		int Point2_y = int(points2[i].y / proportionPicture[1] - 50);
-		Rect rect2(Point2_x, Point2_y, 100, 100);
+		Point2_x[i] = int(points2[i].x / proportionPicture[0] - mat_size.width / 2);
+		Point2_y[i] = int(points2[i].y / proportionPicture[1] - mat_size.height / 2);
+		Rect rect2(Point2_x[i], Point2_y[i], mat_size.width, mat_size.height);
 		TheImage(rect2).copyTo(dst2[i]);
 		
 	}
+
 	/*
 		imshow("a1", dst1[0]);
 		imshow("b1", dst1[1]);
@@ -513,7 +531,7 @@ void C互信息校准测试Dlg::Refresh_MacthPoints(vector<CPoint> points1, vector<CPoi
 		imshow("d2", dst2[3]);
 		*/
 
-			//计算对应图像子块的互信息熵
+	//计算各图像子块的信息熵与四对特征点区域子图的互信息熵
 	double OneImaEntropy1[4]; //视频帧图像信息熵
 	double OneImaEntropy2[4]; //全景图信息熵
 	double TwoImaEntropy[4]; //初始互信息熵
@@ -524,94 +542,125 @@ void C互信息校准测试Dlg::Refresh_MacthPoints(vector<CPoint> points1, vector<CPoi
 		OneImaEntropy2[i] = Entropy(dst2[i]);
 		TwoImaEntropy[i] = ComEntropy(dst1[i], dst2[i], OneImaEntropy1[i], OneImaEntropy2[i]);
 	}
-	/*
-	for (int i = 0; i < 4; i++)
+
+	// 设定全景图的搜索半径
+	int ScanScope = 15; // mat_size.height / 2;
+	Mat ScanDst[4];
+	vector<CPoint> ScanPoint = points2; // 区域搜索得到的精确坐标
+
+	for (int i = 0; i < 4; ++i)
 	{
-		CLSPoint[i].x = points1.at(i).x - IMGSIDE;
-		CLSPoint[i].y = points1.at(i).y - IMGSIDE;
-		CRXPoint[i].x = points1.at(i).x + IMGSIDE;
-		CRXPoint[i].y = points1.at(i).y + IMGSIDE;	
-	}
+		double ScanImaEntropy = 0.0;
+		double ScanTwoImaEntropy = 0.0;
+		double MaxEntropy = 0;//TwoImaEntropy[i];
 
-	Rect ROI0(CLSPoint[0], CRXPoint[0]);
-	Rect ROI1(CLSPoint[1], CRXPoint[1]);
-	Rect ROI2(CLSPoint[2], CRXPoint[2]);
-	Rect ROI3(CLSPoint[3], CRXPoint[3]);
-	CamImage(ROI0).copyTo(dst1[0]);
-	CamImage(ROI1).copyTo(dst1[1]);
-	CamImage(ROI2).copyTo(dst1[2]);
-	CamImage(ROI3).copyTo(dst1[3]);
+		// 设定搜索边界
+		int left = int(points2[i].x / proportionPicture[0]) - ScanScope;
+		int right = int(points2[i].x / proportionPicture[0]) + ScanScope;
+		int top = int(points2[i].y / proportionPicture[1]) - ScanScope;
+		int bottom = int(points2[i].y / proportionPicture[1]) + ScanScope;
 
-
-
-	cv::Point TLSPoint[4], TRXPoint[4];
-	//截取全景图图像子图
-	for (int i = 0; i<4; i++)
-	{
-
-		TLSPoint[i].x = points2.at(i).x - IMGSIDE;
-		TLSPoint[i].y = points2.at(i).y - IMGSIDE;
-		TRXPoint[i].x = points2.at(i).x + IMGSIDE;
-		TRXPoint[i].y = points2.at(i).y + IMGSIDE;
-
-	}
-
-	Rect ROI00(TLSPoint[0], TRXPoint[0]);
-	Rect ROI11(TLSPoint[1], TRXPoint[1]);
-	Rect ROI22(TLSPoint[2], TRXPoint[2]);
-	Rect ROI33(TLSPoint[3], TRXPoint[3]);
-	TheImage(ROI00).copyTo(dst2[0]);
-	TheImage(ROI11).copyTo(dst2[1]);
-	TheImage(ROI22).copyTo(dst2[2]);
-	TheImage(ROI33).copyTo(dst2[3]);
-
-
-	//计算对应图像子块的互信息熵
-	double OneImaEntropy1[4]; //视频帧图像信息熵
-	double OneImaEntropy2[4]; //全景图信息熵
-	double TwoImaEntropy[4]; //初始互信息熵
-
-	for (int i = 0; i<4; i++)
-	{
-		OneImaEntropy1[i] = Entropy(dst1[i]);
-		OneImaEntropy2[i] = Entropy(dst2[i]);
-		TwoImaEntropy[i] = ComEntropy(dst1[i], dst2[i], OneImaEntropy1[i], OneImaEntropy2[i]);
-	}
-
-	vector<CPoint> NewPoints; // 更新的四个匹配点集
-
-	 Rect rect[4][30][30];
-	 Mat dst[4][30][30];
-
-	double OneImaEntropy[4][30][30];
-	double NewTwoEntropy[4][30][30];
-
-	//全景图像匹配点集的局部区域内搜索精确匹配点集
-	for (int i = 0; i < 4; i++)
-	{
-		for (int j = points2.at(i).x - IMAGESIDE; j <= points2.at(i).x + IMAGESIDE; j++)
+		for (int j = top; j <= bottom; ++j)
 		{
-			for (int k = points2.at(i).y - IMAGESIDE; k <= points2.at(i).y + IMAGESIDE; k++)
+			for (int k = left; k <= right; ++k)
 			{
-				rect[i][j][k] = Rect(j - IMGSIDE, k - IMGSIDE, 2 * IMGSIDE, 2 * IMGSIDE); //j、k为更新的局部区域图像坐标						  
-				TheImage(rect[i][j][k]).copyTo(dst[i][j][k]);
+				// 全景图像在子图附近搜索
+				int ScanPoint_x = int(k - mat_size.width / 2);
+				int ScanPoint_y = int(j - mat_size.height / 2);
+				Rect rect2(ScanPoint_x, ScanPoint_y, mat_size.width, mat_size.height);
+				TheImage(rect2).copyTo(ScanDst[i]);
 
-				OneImaEntropy[i][j][k] = Entropy(dst[i][j][k]);
-				NewTwoEntropy[i][j][k] = ComEntropy(dst[i][j][k], dst1[i], OneImaEntropy[i][j][k], OneImaEntropy1[i]);
+				ScanImaEntropy = Entropy(ScanDst[i]);
+				ScanTwoImaEntropy = ComEntropy(dst1[i], ScanDst[i], OneImaEntropy1[i], ScanImaEntropy);
 
-				double MAX = TwoImaEntropy[i];
-				//保存互信息熵最大时的匹配点集 
-				if (NewTwoEntropy[i][j][k] > MAX)   // 计算所有互信息熵，然后取最大值
+				if (ScanTwoImaEntropy > MaxEntropy)
 				{
-					MAX = NewTwoEntropy[i][j][k];
-					NewPoints.at(i).x = j;
-					NewPoints.at(i).y = k;
+					//MessageBox("有精确匹配点");
+					MaxEntropy = ScanTwoImaEntropy;
+					ScanPoint[i].x = k;
+					ScanPoint[i].y = j;
 				}
 			}
-		}
+		}	
 	}
-	
-	return NewPoints;
+
+	// 精确扫描后，重新取子图
+	Mat dstRes[4];
+	for (int i = 0; i < 4; ++i)
+	{
+		// 全景图像取子图
+		int Point2_x = int(ScanPoint[i].x - mat_size.width / 2);
+		int Point2_y = int(ScanPoint[i].y - mat_size.height / 2);
+		Rect rect2(Point2_x, Point2_y, mat_size.width, mat_size.height);
+		TheImage(rect2).copyTo(dstRes[i]);
+		
+	}
+
+	/*
+	imshow("a3", dstRes[0]);
+	imshow("b3", dstRes[1]);
+	imshow("c3", dstRes[2]);
+	imshow("d3", dstRes[3]);
 	*/
+
+	//return NewPoints;
+	// 以上得出四对精确的匹配点，以下进行投影变换的计算
+	// 使用函数getPerspectiveTransform(const Point2f src[], const Point2f dst[]) 
+	// http://blog.csdn.net/xiaowei_cqu/article/details/26478135
+
+	vector<Point2f> corners(4); 
+	vector<Point2f> corners_trans(4); 
+	// 全景图像的四组点
+
+		int img_height = TheImage.rows;
+	int img_width = TheImage.cols;
+
+	corners[0] = Point2f(ScanPoint[0].x, ScanPoint[0].y);  
+    corners[1] = Point2f(ScanPoint[1].x, ScanPoint[1].y);  
+    corners[2] = Point2f(ScanPoint[2].x, ScanPoint[2].y);  
+    corners[3] = Point2f(ScanPoint[3].x, ScanPoint[3].y);
+
+	// 另外四组点
+	corners_trans[0] = Point2f(Point1_x[0], Point1_y[0]);  
+    corners_trans[1] = Point2f(Point1_x[1], Point1_y[1]);  
+    corners_trans[2] = Point2f(Point1_x[2], Point1_y[2]);  
+    corners_trans[3] = Point2f(Point1_x[3], Point1_y[3]);
+
+	cv::Mat transform = getPerspectiveTransform(corners, corners_trans);  // 算出投影变换矩阵
+
+	vector<Point2f> ponits, points_trans;  
+	for(int i = 0; i < img_height; ++i){  
+        for(int j = 0; j < img_width; ++j){  
+            ponits.push_back(Point2f(j,i));  
+        }  
+    }
+	perspectiveTransform( ponits, points_trans, transform);
+	//perspectiveTransform(ponits, transform[,]->points_trans);  // 有问题
+
+    Mat img_trans; // = Mat::zeros(img_height,img_width,CV_8UC3);  
+    int count = 0;  
+
+	warpPerspective(TheImage, img_trans, transform, TheImage.size(), INTER_LINEAR, BORDER_CONSTANT);
+
+	/*
+    for(int i=0;i < img_height;i++)
+	{  
+        uchar* p = TheImage.ptr<uchar>(i);  
+        for(int j=0;j < img_width;j++)
+		{  
+            int y = points_trans[count].y;  
+            int x = points_trans[count].x;  
+            uchar* t = img_trans.ptr<uchar>(y);  
+
+            t[x*3]  = p[j*3];  
+            t[x*3+1]  = p[j*3+1];  
+            t[x*3+2]  = p[j*3+2];  
+            ++count;  
+        }  
+    }  */
+
+    imwrite("转换后的全景图.BMP", img_trans); 
+	imshow("转换后的全景图", img_trans);
+
 }
 
