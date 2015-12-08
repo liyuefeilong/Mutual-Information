@@ -489,13 +489,13 @@ void C互信息校准测试Dlg::Refresh_MacthPoints(vector<CPoint> points1, vector<CPoi
 
 	//// Mat TheImage; //全景图
 	//// Mat CamImage; //视频帧图像
-	imshow("转换后的全景图", TheImage);
-	cv::Size mat_size;  // 子图的尺寸
-	mat_size.height = 30;
-	mat_size.width = 30;
 
-	Mat dst1[4];   // 视频帧图像上截取的四个点的子图
-	Mat dst2[4];   // 全景图像上截取的四个点的子图
+	cv::Size mat_size;  // 子图的尺寸
+	mat_size.height = 100;
+	mat_size.width = 100;
+
+	Mat dst1[4];   // 视频帧图像上截取的四个点的周围子图
+	Mat dst2[4];   // 全景图像上截取的四个点的周围子图
 
 	// 在软件图片显示空间中显示的图片是经过缩放的
 	// 因此选取的坐标也是缩放后的坐标
@@ -520,16 +520,16 @@ void C互信息校准测试Dlg::Refresh_MacthPoints(vector<CPoint> points1, vector<CPoi
 	}
 
 	/*
-		imshow("a1", dst1[0]);
-		imshow("b1", dst1[1]);
-		imshow("c1", dst1[2]);
-		imshow("d1", dst1[3]);
+	imshow("a1", dst1[0]);
+	imshow("b1", dst1[1]);
+	imshow("c1", dst1[2]);
+	imshow("d1", dst1[3]);
 	
-		imshow("a2", dst2[0]);
-		imshow("b2", dst2[1]);
-		imshow("c2", dst2[2]);
-		imshow("d2", dst2[3]);
-		*/
+	imshow("a2", dst2[0]);
+	imshow("b2", dst2[1]);
+	imshow("c2", dst2[2]);
+	imshow("d2", dst2[3]);
+	*/	
 
 	//计算各图像子块的信息熵与四对特征点区域子图的互信息熵
 	double OneImaEntropy1[4]; //视频帧图像信息熵
@@ -543,39 +543,40 @@ void C互信息校准测试Dlg::Refresh_MacthPoints(vector<CPoint> points1, vector<CPoi
 		TwoImaEntropy[i] = ComEntropy(dst1[i], dst2[i], OneImaEntropy1[i], OneImaEntropy2[i]);
 	}
 
-	// 设定全景图的搜索半径
-	int ScanScope = 15; // mat_size.height / 2;
+	// 设定视频帧图像的搜索半径
+	int ScanScope = 50;
 	Mat ScanDst[4];
-	vector<CPoint> ScanPoint = points2; // 区域搜索得到的精确坐标
+	vector<CPoint> ScanPoint = points1; // 区域搜索得到的四组精确坐标，首先初始化为手动选取的坐标
 
 	for (int i = 0; i < 4; ++i)
 	{
 		double ScanImaEntropy = 0.0;
 		double ScanTwoImaEntropy = 0.0;
-		double MaxEntropy = 0;//TwoImaEntropy[i];
+		double MaxEntropy = 0.0;
 
-		// 设定搜索边界
-		int left = int(points2[i].x / proportionPicture[0]) - ScanScope;
-		int right = int(points2[i].x / proportionPicture[0]) + ScanScope;
-		int top = int(points2[i].y / proportionPicture[1]) - ScanScope;
-		int bottom = int(points2[i].y / proportionPicture[1]) + ScanScope;
+		// 设定视频帧子块的搜索边界
+		int left = int(points1[i].x / proportionVideo[0]) - ScanScope;
+		int right = int(points1[i].x / proportionVideo[0]) + ScanScope;
+		int top = int(points1[i].y / proportionVideo[1]) - ScanScope;
+		int bottom = int(points1[i].y / proportionVideo[1]) + ScanScope;
 
 		for (int j = top; j <= bottom; ++j)
 		{
 			for (int k = left; k <= right; ++k)
 			{
-				// 全景图像在子图附近搜索
+				// 视频帧图像在子图附近搜索
 				int ScanPoint_x = int(k - mat_size.width / 2);
 				int ScanPoint_y = int(j - mat_size.height / 2);
 				Rect rect2(ScanPoint_x, ScanPoint_y, mat_size.width, mat_size.height);
-				TheImage(rect2).copyTo(ScanDst[i]);
+				CamImage(rect2).copyTo(ScanDst[i]);
 
+				// 重新计算搜索子图与全景图对应区域的联合熵
 				ScanImaEntropy = Entropy(ScanDst[i]);
-				ScanTwoImaEntropy = ComEntropy(dst1[i], ScanDst[i], OneImaEntropy1[i], ScanImaEntropy);
+				ScanTwoImaEntropy = ComEntropy(dst2[i], ScanDst[i], OneImaEntropy2[i], ScanImaEntropy);
 
 				if (ScanTwoImaEntropy > MaxEntropy)
 				{
-					//MessageBox("有精确匹配点");
+					// MessageBox("有精确匹配点");
 					MaxEntropy = ScanTwoImaEntropy;
 					ScanPoint[i].x = k;
 					ScanPoint[i].y = j;
@@ -588,79 +589,49 @@ void C互信息校准测试Dlg::Refresh_MacthPoints(vector<CPoint> points1, vector<CPoi
 	Mat dstRes[4];
 	for (int i = 0; i < 4; ++i)
 	{
-		// 全景图像取子图
-		int Point2_x = int(ScanPoint[i].x - mat_size.width / 2);
-		int Point2_y = int(ScanPoint[i].y - mat_size.height / 2);
-		Rect rect2(Point2_x, Point2_y, mat_size.width, mat_size.height);
-		TheImage(rect2).copyTo(dstRes[i]);
+		// 视频帧图像重新取精确子图
+		int Point1_x = int(ScanPoint[i].x - mat_size.width / 2);
+		int Point1_y = int(ScanPoint[i].y - mat_size.height / 2);
+		Rect rect2(Point1_x, Point1_y, mat_size.width, mat_size.height);
+		CamImage(rect2).copyTo(dstRes[i]);
 		
 	}
 
 	/*
+	// 精确坐标点周围区域显示
 	imshow("a3", dstRes[0]);
 	imshow("b3", dstRes[1]);
 	imshow("c3", dstRes[2]);
 	imshow("d3", dstRes[3]);
 	*/
 
-	//return NewPoints;
 	// 以上得出四对精确的匹配点，以下进行投影变换的计算
 	// 使用函数getPerspectiveTransform(const Point2f src[], const Point2f dst[]) 
 	// http://blog.csdn.net/xiaowei_cqu/article/details/26478135
 
 	vector<Point2f> corners(4); 
 	vector<Point2f> corners_trans(4); 
-	// 全景图像的四组点
 
-		int img_height = TheImage.rows;
-	int img_width = TheImage.cols;
-
+	// 视频帧图像的四个精确匹配点
 	corners[0] = Point2f(ScanPoint[0].x, ScanPoint[0].y);  
     corners[1] = Point2f(ScanPoint[1].x, ScanPoint[1].y);  
     corners[2] = Point2f(ScanPoint[2].x, ScanPoint[2].y);  
     corners[3] = Point2f(ScanPoint[3].x, ScanPoint[3].y);
 
-	// 另外四组点
-	corners_trans[0] = Point2f(Point1_x[0], Point1_y[0]);  
-    corners_trans[1] = Point2f(Point1_x[1], Point1_y[1]);  
-    corners_trans[2] = Point2f(Point1_x[2], Point1_y[2]);  
-    corners_trans[3] = Point2f(Point1_x[3], Point1_y[3]);
+	// 全景图上对应的四个点
+	corners_trans[0] = Point2f(Point2_x[0], Point2_y[0]);  
+    corners_trans[1] = Point2f(Point2_x[1], Point2_y[1]);  
+    corners_trans[2] = Point2f(Point2_x[2], Point2_y[2]);  
+    corners_trans[3] = Point2f(Point2_x[3], Point2_y[3]);
 
 	cv::Mat transform = getPerspectiveTransform(corners, corners_trans);  // 算出投影变换矩阵
 
-	vector<Point2f> ponits, points_trans;  
-	for(int i = 0; i < img_height; ++i){  
-        for(int j = 0; j < img_width; ++j){  
-            ponits.push_back(Point2f(j,i));  
-        }  
-    }
-	perspectiveTransform( ponits, points_trans, transform);
-	//perspectiveTransform(ponits, transform[,]->points_trans);  // 有问题
+    Mat img_trans;
 
-    Mat img_trans; // = Mat::zeros(img_height,img_width,CV_8UC3);  
-    int count = 0;  
+	warpPerspective(CamImage, img_trans, transform, CamImage.size(), INTER_LINEAR, BORDER_CONSTANT);
 
-	warpPerspective(TheImage, img_trans, transform, TheImage.size(), INTER_LINEAR, BORDER_CONSTANT);
-
-	/*
-    for(int i=0;i < img_height;i++)
-	{  
-        uchar* p = TheImage.ptr<uchar>(i);  
-        for(int j=0;j < img_width;j++)
-		{  
-            int y = points_trans[count].y;  
-            int x = points_trans[count].x;  
-            uchar* t = img_trans.ptr<uchar>(y);  
-
-            t[x*3]  = p[j*3];  
-            t[x*3+1]  = p[j*3+1];  
-            t[x*3+2]  = p[j*3+2];  
-            ++count;  
-        }  
-    }  */
-
-    imwrite("转换后的全景图.BMP", img_trans); 
-	imshow("转换后的全景图", img_trans);
+    imwrite("转换后的视频帧图像.BMP", img_trans); 
+	imshow("转换后的视频帧图像", img_trans);
 
 }
 

@@ -1,7 +1,7 @@
 % 仿射变换
 clear;
 q = 0.5;
-U = [1*cos(q) 1.1*sin(q) 0;-1.1*sin(q) 1*cos(q) 0;0 0 1];
+U = [1*cos(q) 0.6*sin(q) 0;-0.6*sin(q) 1*cos(q) 0;0 0 1];
 img = imread('Fig8.14(a).jpg');
 % 获取图像相关信息
 % 若为彩色图像，则需转化为灰度图像

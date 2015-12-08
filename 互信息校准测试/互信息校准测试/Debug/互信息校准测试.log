@@ -1,20 +1,19 @@
-﻿生成启动时间为 2015/12/7 16:55:49。
-     1>项目“C:\Github working\Mutual-Information\互信息校准测试\互信息校准测试\互信息校准测试.vcxproj”在节点 2 上(Rebuild 个目标)。
+﻿生成启动时间为 2015/12/8 23:10:13。
+     1>项目“C:\Github working\Mutual-Information\互信息校准测试\互信息校准测试\互信息校准测试.vcxproj”在节点 2 上(Build 个目标)。
        项目文件包含 ToolsVersion="12.0"。此工具集可能未知或缺失。在这种情况下，通过安装 MSBuild 的正确版本，或许可以解决此问题。否则，该 build 可能已因策略原因而被强制为某个特定 ToolsVersion。将该项目视为其已具有 ToolsVersion="4.0"。有关详细信息，请参阅 http://go.microsoft.com/fwlink/?LinkId=291333。
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D _CRT_SECURE_NO_WARNINGS /D _AFXDLL /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"Debug\互信息校准测试.pch" /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt stdafx.cpp
          stdafx.cpp
          C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D _CRT_SECURE_NO_WARNINGS /D _AFXDLL /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\互信息校准测试.pch" /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt CvvImage.cpp "互信息校准测试.cpp" "互信息校准测试Dlg.cpp"
          互信息校准测试Dlg.cpp
+     1>c:\github working\mutual-information\互信息校准测试\互信息校准测试\互信息校准测试dlg.cpp(616): warning C4244: “参数”: 从“LONG”转换到“float”，可能丢失数据
+     1>c:\github working\mutual-information\互信息校准测试\互信息校准测试\互信息校准测试dlg.cpp(617): warning C4244: “参数”: 从“LONG”转换到“float”，可能丢失数据
      1>c:\github working\mutual-information\互信息校准测试\互信息校准测试\互信息校准测试dlg.cpp(618): warning C4244: “参数”: 从“LONG”转换到“float”，可能丢失数据
      1>c:\github working\mutual-information\互信息校准测试\互信息校准测试\互信息校准测试dlg.cpp(619): warning C4244: “参数”: 从“LONG”转换到“float”，可能丢失数据
-     1>c:\github working\mutual-information\互信息校准测试\互信息校准测试\互信息校准测试dlg.cpp(620): warning C4244: “参数”: 从“LONG”转换到“float”，可能丢失数据
-     1>c:\github working\mutual-information\互信息校准测试\互信息校准测试\互信息校准测试dlg.cpp(621): warning C4244: “参数”: 从“LONG”转换到“float”，可能丢失数据
+     1>c:\github working\mutual-information\互信息校准测试\互信息校准测试\互信息校准测试dlg.cpp(622): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+     1>c:\github working\mutual-information\互信息校准测试\互信息校准测试\互信息校准测试dlg.cpp(623): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
      1>c:\github working\mutual-information\互信息校准测试\互信息校准测试\互信息校准测试dlg.cpp(624): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
      1>c:\github working\mutual-information\互信息校准测试\互信息校准测试\互信息校准测试dlg.cpp(625): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
-     1>c:\github working\mutual-information\互信息校准测试\互信息校准测试\互信息校准测试dlg.cpp(626): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
-     1>c:\github working\mutual-information\互信息校准测试\互信息校准测试\互信息校准测试dlg.cpp(627): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
-     1>c:\github working\mutual-information\互信息校准测试\互信息校准测试\互信息校准测试dlg.cpp(634): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
          互信息校准测试.cpp
          CvvImage.cpp
          正在生成代码...
@@ -27,8 +26,8 @@
          "Debug\互信息校准测试.obj"
          "Debug\互信息校准测试Dlg.obj"
          互信息校准测试.vcxproj -> C:\Github working\Mutual-Information\互信息校准测试\Debug\互信息校准测试.exe
-     1>已完成生成项目“C:\Github working\Mutual-Information\互信息校准测试\互信息校准测试\互信息校准测试.vcxproj”(Rebuild 个目标)的操作。
+     1>已完成生成项目“C:\Github working\Mutual-Information\互信息校准测试\互信息校准测试\互信息校准测试.vcxproj”(Build 个目标)的操作。
 
 生成成功。
 
-已用时间 00:00:16.75
+已用时间 00:00:20.60
